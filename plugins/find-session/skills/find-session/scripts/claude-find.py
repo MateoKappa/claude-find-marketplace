@@ -74,8 +74,9 @@ def session_files(project=None):
     """All transcript files, optionally only those whose project dir matches.
 
     `project` is a case-insensitive substring tested against the dashified
-    project-dir name (e.g. '...-cq-precon-tracker'). Lets the caller scope a
-    search to one repo when they remember the project but not the words.
+    project-dir name (e.g. 'marketing' matches '...-Documents-GitHub-marketing-site').
+    Lets the caller scope a search to one repo when they remember the project
+    but not the words.
     """
     files = glob.glob(os.path.join(ROOT, "*", "*.jsonl"))
     if project:

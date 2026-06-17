@@ -17,13 +17,13 @@ Just ask Claude in natural language:
 In any Claude Code session:
 
 ```
-/plugin marketplace add mateokappa/claude-find-marketplace
+/plugin marketplace add MateoKappa/claude-find-marketplace
 /plugin install find-session@mateokappa-tools
 ```
 
 Then enable when prompted (or `/plugin enable find-session@mateokappa-tools`).
 
-> Replace `mateokappa/claude-find-marketplace` with the actual `owner/repo` once pushed to GitHub.
+> Replace `MateoKappa/claude-find-marketplace` with the actual `owner/repo` once pushed to GitHub.
 
 ## What's inside
 

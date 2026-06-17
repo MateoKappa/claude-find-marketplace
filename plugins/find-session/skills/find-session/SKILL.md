@@ -27,17 +27,31 @@ Claude Code stores every session as a JSONL transcript under `~/.claude/projects
 Run the bundled script with the user's remembered keywords as arguments:
 
 ```bash
-python3 "${CLAUDE_PLUGIN_ROOT:-$CLAUDE_SKILL_DIR}/skills/find-session/scripts/claude-find.py" <term1> [term2 ...]
+python3 "$CLAUDE_SKILL_DIR/scripts/claude-find.py" <term1> [term2 ...]
 ```
 
-`$CLAUDE_PLUGIN_ROOT` is set when this runs as an installed plugin; `$CLAUDE_SKILL_DIR` when run as a bare skill (in which case the script is at `$CLAUDE_SKILL_DIR/scripts/claude-find.py`). If neither resolves, use the absolute path to this skill's `scripts/claude-find.py`.
+If `$CLAUDE_SKILL_DIR` is not set, use the absolute path to this skill's `scripts/claude-find.py`.
 
-Guidelines:
-- Pull the most distinctive nouns from the user's request as search terms (e.g. project names, tech, unusual words). Multiple terms = AND match.
-- If the user gives a vague request, run with 1–2 strong keywords first, then narrow.
-- Results are ranked newest-first and show: project path, git branch, session title, session id, and matching snippets.
-- To browse everything instead of searching: `python3 .../claude-find.py -i`
-- For more snippet context: append `--full 400`.
+Pick the search mode based on what the user gives you:
+
+**A. They remember exact words → AND search (default).**
+Pull the distinctive terms (project names, tech, unusual words) and pass them directly:
+`... claude-find.py sedia multipart`
+All terms must appear. Results are newest-first.
+
+**B. They DESCRIBE the session in their own words → `--any` search.**
+This is the important case. The user's words may not match the transcript's words, so YOU bridge the gap: expand their description into a broad set of candidate keywords and synonyms — 4–10 terms covering different ways the topic could have been written — and pass them with `--any`:
+
+> User: "find where I overlaid multiple projects on one graph to compare them"
+> You run: `... claude-find.py --any compare overlay chart graph projects "multi-series" line area`
+
+`--any` matches sessions containing ANY term and **ranks by relevance** (term coverage + title match + hit count), so the best-fitting session floats to the top even if no single word was guaranteed. Each result shows a `score` and `N/M terms`.
+
+Then **read the top 3–5 results and judge** which one actually matches the user's description — don't just echo the #1 score. Use the titles and snippets to decide, and say which you're confident about. If nothing fits, broaden the synonyms and run `--any` again.
+
+Other flags:
+- `-i` — browse every session (project + title), newest first, no search.
+- `--full 400` — more snippet context per hit.
 
 ## Reporting back
 

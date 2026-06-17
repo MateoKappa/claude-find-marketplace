@@ -23,8 +23,6 @@ In any Claude Code session:
 
 Then enable when prompted (or `/plugin enable find-session@mateokappa-tools`).
 
-> Replace `MateoKappa/claude-find-marketplace` with the actual `owner/repo` once pushed to GitHub.
-
 ## What's inside
 
 ```

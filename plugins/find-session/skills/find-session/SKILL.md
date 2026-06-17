@@ -49,8 +49,18 @@ This is the important case. The user's words may not match the transcript's word
 
 Then **read the top 3–5 results and judge** which one actually matches the user's description — don't just echo the #1 score. Use the titles and snippets to decide, and say which you're confident about. If nothing fits, broaden the synonyms and run `--any` again.
 
+**C. They name a PROJECT/repo but not the words → `--project` scope.**
+Often the strongest signal. Session titles can be misleading (a landing-page redesign might be titled "tv-mode-progress-timeline"), and the work may never use the user's vocabulary in prose — but the **file names** do. When the user mentions a project ("...on precon", "in the dashboard repo"):
+
+> User: "where I was making multiple versions of a landing page on precon"
+> You run: `... claude-find.py --project precon`
+
+With no query, `--project` lists that repo's sessions newest-first **and the files each one wrote/edited**. A line like `files: version-four.tsx×15, version-two.tsx×14` reveals the session even when the title and message text don't. Then narrow if needed: `--project precon --any landing mockup hero version`.
+
+**Rule of thumb:** if the user names a project, ALWAYS try `--project <name>` first — scanning file paths beats guessing synonyms. Combine modes freely: `--project`, `--any`, and plain terms all stack.
+
 Other flags:
-- `-i` — browse every session (project + title), newest first, no search.
+- `-i` — browse every session (project + title); add `--project` to scope.
 - `--full 400` — more snippet context per hit.
 
 ## Reporting back

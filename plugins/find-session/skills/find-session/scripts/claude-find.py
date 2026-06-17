@@ -5,19 +5,23 @@ project/terminal a conversation happened in.
 Usage:
   claude-find <query> [query2 ...]      # all terms must match (AND), case-insensitive
   claude-find --any <t1> <t2> ...       # OR mode: match ANY term, rank by relevance
-  claude-find -i                        # interactive: list every session w/ title
+  claude-find --project <name>          # browse one repo's sessions + files each touched
+  claude-find --project <name> <query>  # search within one repo only
+  claude-find -i [--project <name>]     # interactive: list sessions w/ title
   claude-find <query> --full <n>        # print n chars of context per hit (default 200)
 
-AND vs --any:
-  Use AND (default) when you remember exact words ("sedia multipart").
-  Use --any when you can only DESCRIBE the session — pass many synonyms and
-  candidate keywords; sessions are ranked so the best fit floats to the top
-  even though no single word is guaranteed to appear.
+Three ways to find a session, by how much you remember:
+  exact words      -> AND (default):  claude-find sedia multipart
+  only a gist      -> --any + synonyms: claude-find --any compare overlay chart graph
+  the project only -> --project:      claude-find --project precon
+                      (lists sessions + the files they wrote — titles often mislead,
+                       but a filename like version-four.tsx gives it away)
 
 Examples:
   claude-find sedia multipart
-  claude-find "mouse jiggler"
   claude-find --any compare overlay chart projects graph multi-series
+  claude-find --project precon
+  claude-find --project precon landing mockup
 """
 import sys, os, json, glob, re, argparse
 from datetime import datetime
@@ -66,7 +70,20 @@ def extract_text(obj):
             return "\n".join(parts)
     return ""
 
-def scan(terms, full, any_mode):
+def session_files(project=None):
+    """All transcript files, optionally only those whose project dir matches.
+
+    `project` is a case-insensitive substring tested against the dashified
+    project-dir name (e.g. '...-cq-precon-tracker'). Lets the caller scope a
+    search to one repo when they remember the project but not the words.
+    """
+    files = glob.glob(os.path.join(ROOT, "*", "*.jsonl"))
+    if project:
+        p = project.lower().replace("/", "-")
+        files = [f for f in files if p in os.path.basename(os.path.dirname(f)).lower()]
+    return files
+
+def scan(terms, full, any_mode, project=None):
     """Search every transcript.
 
     AND mode (default): a line must contain ALL terms to count.
@@ -81,7 +98,7 @@ def scan(terms, full, any_mode):
     """
     terms_l = [t.lower() for t in terms]
     results = {}  # session file -> dict
-    for f in glob.glob(os.path.join(ROOT, "*", "*.jsonl")):
+    for f in session_files(project):
         meta = {"file": f, "dir": os.path.dirname(f),
                 "cwd": None, "branch": None, "title": None,
                 "hits": [], "mtime": os.path.getmtime(f), "first_ts": None,
@@ -142,11 +159,13 @@ def main():
     ap.add_argument("-i", "--interactive", action="store_true")
     ap.add_argument("--any", dest="any_mode", action="store_true",
                     help="OR mode: match ANY term, rank by relevance (for loose/described queries)")
+    ap.add_argument("--project", default=None,
+                    help="scope to project dirs whose name contains this substring")
     ap.add_argument("--full", type=int, default=200)
     ap.add_argument("-h", "--help", action="store_true")
     a = ap.parse_args()
 
-    if a.help or (not a.query and not a.interactive):
+    if a.help or (not a.query and not a.interactive and not a.project):
         print(__doc__)
         return
 
@@ -154,9 +173,55 @@ def main():
         print(c(f"No Claude Code history found at {ROOT} — nothing to search.", YEL))
         return
 
+    # Project scope, no query → browse that repo's sessions + the files each touched.
+    # Best when you remember the project but not the words (titles often mislead).
+    if a.project and not a.query and not a.interactive:
+        files = session_files(a.project)
+        if not files:
+            print(c(f"No project matched '{a.project}'. List all with -i.", YEL))
+            return
+        rows = []
+        for f in files:
+            title = ts = None
+            touched = []
+            try:
+                for line in open(f, encoding="utf-8"):
+                    try:
+                        o = json.loads(line)
+                    except Exception:
+                        continue
+                    if o.get("type") == "ai-title":
+                        title = o.get("aiTitle")
+                    if ts is None and o.get("timestamp"):
+                        ts = o["timestamp"]
+                    m = o.get("message")
+                    if isinstance(m, dict) and isinstance(m.get("content"), list):
+                        for b in m["content"]:
+                            if isinstance(b, dict) and b.get("type") == "tool_use" \
+                               and b.get("name") in ("Write", "Edit"):
+                                fp = b.get("input", {}).get("file_path", "")
+                                if fp:
+                                    touched.append(os.path.basename(fp))
+            except Exception:
+                continue
+            rows.append((os.path.getmtime(f), title or "(no title)",
+                         os.path.basename(f)[:8], ts, touched))
+        rows.sort(reverse=True)
+        cwd_disp = os.path.basename(os.path.dirname(files[0]))
+        print(c(f"\n{len(rows)} session(s) in project ~{a.project}~  ({cwd_disp}):\n", BOLD))
+        for mt, title, sid, ts, touched in rows:
+            print(c(f"▶ {title}", BOLD) + c(f"   {sid}  ·  {fmt_time(ts)}", DIM))
+            if touched:
+                from collections import Counter
+                top = [f"{n}×{cnt}" if cnt > 1 else n
+                       for n, cnt in Counter(touched).most_common(8)]
+                print(c(f"    files: {', '.join(top)}", GRN))
+        print()
+        return
+
     if a.interactive:
         rows = []
-        for f in glob.glob(os.path.join(ROOT, "*", "*.jsonl")):
+        for f in session_files(a.project):
             cwd = title = ts = None
             try:
                 with open(f, encoding="utf-8") as fh:
@@ -181,7 +246,7 @@ def main():
             print(f"    {c(title,BOLD)}  {c(sid,DIM)}")
         return
 
-    res = scan(a.query, a.full, a.any_mode)
+    res = scan(a.query, a.full, a.any_mode, a.project)
     if not res:
         hint = "" if a.any_mode else "  (try --any for a looser, ranked search)"
         print(c(f"No sessions matched: {' '.join(a.query)}{hint}", YEL))

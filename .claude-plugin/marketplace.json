@@ -1,0 +1,15 @@
+{
+  "name": "mateokappa-tools",
+  "owner": {
+    "name": "mateokappa"
+  },
+  "plugins": [
+    {
+      "name": "find-session",
+      "source": "./plugins/find-session",
+      "description": "Find which past Claude Code session, project, or terminal a conversation happened in by searching what you remember about it.",
+      "version": "1.0.0",
+      "license": "MIT"
+    }
+  ]
+}

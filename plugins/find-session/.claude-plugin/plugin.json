@@ -1,7 +1,7 @@
 {
   "name": "find-session",
   "description": "Find which past Claude Code session, project, or terminal a conversation happened in by searching the content you remember. Searches all local session transcripts and returns the project path, git branch, session title, and matching snippets.",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "author": {
     "name": "mateokappa"
   },

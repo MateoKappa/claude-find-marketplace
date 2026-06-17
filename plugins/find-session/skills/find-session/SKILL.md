@@ -13,10 +13,10 @@ Locate a past Claude Code conversation across all projects/terminals by searchin
 ## When to use
 
 Trigger when the user wants to find a previous session but doesn't recall which project or terminal it was in. Example phrasings:
-- "which project did I set up the SEDIA API in?"
-- "find the Claude session where I discussed the jiggler server"
-- "what terminal did I run that migration in"
-- "search my old chats for the airtable thing"
+- "which project did I set up Stripe webhooks in?"
+- "find the Claude session where I debugged that auth redirect loop"
+- "what terminal did I run the database migration in"
+- "search my old chats for where I wrote the rate limiter"
 
 ## How it works
 
@@ -36,26 +36,26 @@ Pick the search mode based on what the user gives you:
 
 **A. They remember exact words → AND search (default).**
 Pull the distinctive terms (project names, tech, unusual words) and pass them directly:
-`... claude-find.py sedia multipart`
+`... claude-find.py stripe webhook signature`
 All terms must appear. Results are newest-first.
 
 **B. They DESCRIBE the session in their own words → `--any` search.**
 This is the important case. The user's words may not match the transcript's words, so YOU bridge the gap: expand their description into a broad set of candidate keywords and synonyms — 4–10 terms covering different ways the topic could have been written — and pass them with `--any`:
 
-> User: "find where I overlaid multiple projects on one graph to compare them"
-> You run: `... claude-find.py --any compare overlay chart graph projects "multi-series" line area`
+> User: "find where I built that thing that compares several items on one chart"
+> You run: `... claude-find.py --any compare overlay chart graph "multi-series" line area dashboard`
 
 `--any` matches sessions containing ANY term and **ranks by relevance** (term coverage + title match + hit count), so the best-fitting session floats to the top even if no single word was guaranteed. Each result shows a `score` and `N/M terms`.
 
 Then **read the top 3–5 results and judge** which one actually matches the user's description — don't just echo the #1 score. Use the titles and snippets to decide, and say which you're confident about. If nothing fits, broaden the synonyms and run `--any` again.
 
 **C. They name a PROJECT/repo but not the words → `--project` scope.**
-Often the strongest signal. Session titles can be misleading (a landing-page redesign might be titled "tv-mode-progress-timeline"), and the work may never use the user's vocabulary in prose — but the **file names** do. When the user mentions a project ("...on precon", "in the dashboard repo"):
+Often the strongest signal. Session titles can be misleading (a landing-page redesign might be auto-titled after some unrelated detail), and the work may never use the user's vocabulary in prose — but the **file names** do. When the user mentions a project ("...in the billing service", "in the dashboard repo"):
 
-> User: "where I was making multiple versions of a landing page on precon"
-> You run: `... claude-find.py --project precon`
+> User: "where I was making a few versions of the landing page in the marketing site"
+> You run: `... claude-find.py --project marketing`
 
-With no query, `--project` lists that repo's sessions newest-first **and the files each one wrote/edited**. A line like `files: version-four.tsx×15, version-two.tsx×14` reveals the session even when the title and message text don't. Then narrow if needed: `--project precon --any landing mockup hero version`.
+With no query, `--project` lists that repo's sessions newest-first **and the files each one wrote/edited**. A line like `files: hero.tsx×15, pricing.tsx×14` reveals the session even when the title and message text don't. Then narrow if needed: `--project marketing --any landing hero pricing version`.
 
 **Rule of thumb:** if the user names a project, ALWAYS try `--project <name>` first — scanning file paths beats guessing synonyms. Combine modes freely: `--project`, `--any`, and plain terms all stack.
 

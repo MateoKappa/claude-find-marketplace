@@ -8,9 +8,17 @@ Find which past Claude Code session, project, or terminal a conversation happene
 
 Just ask Claude in natural language:
 
-- "which project did I set up the SEDIA API in?"
-- "find the session where I discussed the jiggler server"
-- "what terminal did I run that migration in"
+- "which project did I set up Stripe webhooks in?"
+- "find the session where I debugged that auth redirect loop"
+- "what terminal did I run the database migration in"
+
+Three ways to find a session, matched to how much you remember:
+
+| You remember… | How it searches |
+|---------------|-----------------|
+| Exact words | AND match across all transcripts |
+| Only a vague description | OR + synonym expansion, ranked by relevance |
+| The project, not the words | Scopes to that repo and scans the **file names** each session touched — finds it even when the title is misleading |
 
 ## Install
 

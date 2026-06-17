@@ -11,17 +11,17 @@ Usage:
   claude-find <query> --full <n>        # print n chars of context per hit (default 200)
 
 Three ways to find a session, by how much you remember:
-  exact words      -> AND (default):  claude-find sedia multipart
+  exact words      -> AND (default):  claude-find stripe webhook signature
   only a gist      -> --any + synonyms: claude-find --any compare overlay chart graph
-  the project only -> --project:      claude-find --project precon
+  the project only -> --project:      claude-find --project marketing
                       (lists sessions + the files they wrote — titles often mislead,
-                       but a filename like version-four.tsx gives it away)
+                       but a filename like hero.tsx gives it away)
 
 Examples:
-  claude-find sedia multipart
-  claude-find --any compare overlay chart projects graph multi-series
-  claude-find --project precon
-  claude-find --project precon landing mockup
+  claude-find stripe webhook signature
+  claude-find --any compare overlay chart graph multi-series
+  claude-find --project marketing
+  claude-find --project marketing landing hero
 """
 import sys, os, json, glob, re, argparse
 from datetime import datetime
